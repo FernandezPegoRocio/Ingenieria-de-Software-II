@@ -1,0 +1,9 @@
+1-La contraseña es admin123
+
+2-Y la url localhos:8080/admin.html
+
+3-Pasar toda función y nombre de clase a inglés y comentar todo en formato Doxygen en español.
+
+4-La función crearElemento se repite, detectar todo código que pueda ir a un utils.js o visualHelper.js
+
+5-Estaría bien usar una ruta como /admin y /login y no los html. Que la vista la sirva el backend.
