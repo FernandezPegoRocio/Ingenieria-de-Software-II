@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agregación: personajes que cambian de arma y habilidad</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <header>
+        <h1>Agregación en acción</h1>
+        <p>Un <strong>Personaje</strong> "tiene un" arma y "tiene una" habilidad. Se las cambiás cuando quieras, sin crear otro personaje.</p>
+    </header>
+
+    <canvas id="lienzo" width="800" height="330" aria-label="Escenario con los dos personajes"></canvas>
+
+    <p id="aviso" class="aviso"></p>
+
+    <div id="paneles"></div>
+
+    <div class="barra">
+        <button id="reiniciar" type="button">🔄 Reiniciar vida</button>
+    </div>
+
+    <section class="registro-caja">
+        <h2>Registro</h2>
+        <ul id="registro"></ul>
+    </section>
+
+    <script type="module" src="js/cliente/main.js"></script>
+</body>
+</html>

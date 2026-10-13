@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["ES2020"],
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "alwaysStrict": true,
+    "types": ["node"]
+  },
+  "include": ["src/modelo/**/*.ts", "src/servidor/**/*.ts", "src/pruebas/**/*.ts"]
+}

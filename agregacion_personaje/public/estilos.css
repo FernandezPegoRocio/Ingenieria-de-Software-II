@@ -1,0 +1,78 @@
+:root {
+    --fondo: #f5f3ff;
+    --texto: #1f2937;
+    --caja: #ffffff;
+    --borde: #d4cdee;
+    --acento: #6d28d9;
+    --acento-texto: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fondo: #15122b;
+        --texto: #ece9fb;
+        --caja: #221d45;
+        --borde: #3a3369;
+        --acento: #8b5cf6;
+    }
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    max-width: 840px;
+    margin-inline: auto;
+}
+h1 { margin: 0 0 4px; font-size: 1.6rem; }
+h2 { margin: 0 0 8px; font-size: 1.1rem; }
+header p { margin: 0 0 14px; }
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    border: 1px solid var(--borde);
+}
+.aviso { min-height: 1.4em; margin: 10px 0; font-size: 0.95rem; }
+#paneles { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.panel {
+    background: var(--caja);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+.panel label { display: block; margin: 6px 0; font-size: 0.9rem; }
+.panel select {
+    display: block;
+    width: 100%;
+    margin-top: 3px;
+    padding: 7px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+    background: var(--fondo);
+    color: var(--texto);
+}
+.botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+button {
+    padding: 9px 12px;
+    font-size: 0.95rem;
+    border: 0;
+    border-radius: 8px;
+    background: var(--acento);
+    color: var(--acento-texto);
+    cursor: pointer;
+}
+button:hover { filter: brightness(1.12); }
+button:focus-visible, select:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.barra { margin: 12px 0; }
+.registro-caja {
+    background: var(--caja);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+#registro { margin: 0; padding-left: 18px; max-height: 220px; overflow-y: auto; font-size: 0.92rem; }
+#registro li { margin: 3px 0; }

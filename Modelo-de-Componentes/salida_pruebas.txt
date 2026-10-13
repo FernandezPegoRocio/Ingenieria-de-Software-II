@@ -1,0 +1,133 @@
+Seguimiento práctico del modelo de componentes
+
+=== PUNTO 1: Frontera del ABI segura (C-API y noexcept) ===
+  (Los tipos de la C-API y de IGreeter::greet son noexcept y de tipos C: lo verificó el compilador con static_assert)
+    [host]       SharedLibrary: se abrió './lib/greeter.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'greeter' guardada en el mapa (mapa protegido por map_mutex_)
+    [host]       create_instance('greeter'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('greeter'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    [componente] get_api_version() devuelve 1
+    [host]       create_instance('greeter'): versión de ABI compatible (Host = 1, módulo = 1)
+    [componente] create_component(): hago new GreeterComponent dentro del componente
+    [componente] GreeterComponent construido (el objeto vive en el heap del componente)
+  [OK]    greeter: usa extern "C" y la versión de ABI coincide -> el componente se crea
+    [host]       SharedLibrary: se abrió './lib/version_incorrecta.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'version_incorrecta' guardada en el mapa (mapa protegido por map_mutex_)
+    [host]       create_instance('version_incorrecta'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('version_incorrecta'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    mensaje del Host: ModuleManager Error: Discrepancia de ABI en version_incorrecta. Esperado: 1, Encontrado: 99
+  [OK]    version_incorrecta: el Host la rechaza antes de crear ningún objeto
+    [host]       SharedLibrary: se abrió './lib/sin_simbolos.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'sin_simbolos' guardada en el mapa (mapa protegido por map_mutex_)
+    [host]       create_instance('sin_simbolos'): biblioteca tomada del mapa; el mutex ya se soltó
+    mensaje del Host: ModuleManager Error: Faltan símbolos requeridos en sin_simbolos
+  [OK]    sin_simbolos: no exporta la C-API -> el Host lo detecta
+    [host]       SharedLibrary: se abrió './lib/sin_extern_c.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'sin_extern_c' guardada en el mapa (mapa protegido por map_mutex_)
+    [host]       create_instance('sin_extern_c'): biblioteca tomada del mapa; el mutex ya se soltó
+    mensaje del Host: ModuleManager Error: Faltan símbolos requeridos en sin_extern_c
+  [OK]    sin_extern_c: las mismas funciones SIN extern "C" quedan con el nombre decorado y no se encuentran
+    mensaje del Host: ModuleManager Error Crítico al cargar no_existe: Error al cargar la biblioteca: ./lib/no_existe.dll
+  [OK]    no_existe: la falla al cargar sube como std::runtime_error, no como código ni exit()
+    [host]       deleter: el shared_ptr llegó a cero; llamo a destroy_func del componente (copias de la biblioteca vivas: 2)
+    [componente] destroy_component(): hago delete dentro del componente (el que reserva, libera)
+    [componente] GreeterComponent destruido
+    [host]       SharedLibrary: se cierra './lib/sin_extern_c.dll' (dlclose / FreeLibrary)
+    [host]       SharedLibrary: se cierra './lib/version_incorrecta.dll' (dlclose / FreeLibrary)
+    [host]       SharedLibrary: se cierra './lib/sin_simbolos.dll' (dlclose / FreeLibrary)
+    [host]       SharedLibrary: se cierra './lib/greeter.dll' (dlclose / FreeLibrary)
+
+=== PUNTO 2: Eliminación de excepciones cruzadas y tipos C++ estándar ===
+    [host]       SharedLibrary: se abrió './lib/greeter.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'greeter' guardada en el mapa (mapa protegido por map_mutex_)
+    [host]       create_instance('greeter'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('greeter'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    [componente] get_api_version() devuelve 1
+    [host]       create_instance('greeter'): versión de ABI compatible (Host = 1, módulo = 1)
+    [componente] create_component(): hago new GreeterComponent dentro del componente
+    [componente] GreeterComponent construido (el objeto vive en el heap del componente)
+  [OK]    greet con buffer de C (char*, size_t) -> SUCCESS y el texto llega por el buffer: "Hello, Rocio!"
+  [OK]    buffer de 5 bytes -> ERROR_INVALID_ARGUMENT (no desborda el buffer)
+  [OK]    nombre nulo -> ERROR_INVALID_ARGUMENT
+  [OK]    buffer de tamaño 0 -> ERROR_INVALID_ARGUMENT
+    [host]       SharedLibrary: se abrió './lib/fallo_interno.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'fallo_interno' guardada en el mapa (mapa protegido por map_mutex_)
+    [host]       create_instance('fallo_interno'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('fallo_interno'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    [host]       create_instance('fallo_interno'): versión de ABI compatible (Host = 1, módulo = 1)
+    [componente] greet(): lanzo std::runtime_error dentro del componente
+    [componente] greet(): el catch(...) atrapó la excepción; devuelvo un código de error
+  [OK]    fallo_interno: una std::runtime_error ocurrió ADENTRO del componente; al Host solo le llegó ERROR_INTERNAL
+    [host]       deleter: el shared_ptr llegó a cero; llamo a destroy_func del componente (copias de la biblioteca vivas: 2)
+    [host]       deleter: el shared_ptr llegó a cero; llamo a destroy_func del componente (copias de la biblioteca vivas: 2)
+    [componente] destroy_component(): hago delete dentro del componente (el que reserva, libera)
+    [componente] GreeterComponent destruido
+    [host]       SharedLibrary: se cierra './lib/fallo_interno.dll' (dlclose / FreeLibrary)
+    [host]       SharedLibrary: se cierra './lib/greeter.dll' (dlclose / FreeLibrary)
+
+=== PUNTO 3: Gestión automática de memoria cruzada (RAII con custom deleters) ===
+  -- Caso A: el ModuleManager vive más que los componentes --
+    [host]       SharedLibrary: se abrió './lib/greeter.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'greeter' guardada en el mapa (mapa protegido por map_mutex_)
+  [OK]    después de load_module: 1 referencia a la biblioteca (la del mapa)
+    [host]       create_instance('greeter'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('greeter'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    [componente] get_api_version() devuelve 1
+    [host]       create_instance('greeter'): versión de ABI compatible (Host = 1, módulo = 1)
+    [componente] create_component(): hago new GreeterComponent dentro del componente
+    [componente] GreeterComponent construido (el objeto vive en el heap del componente)
+  [OK]    con 1 componente vivo: 2 referencias (mapa + deleter del componente)
+    [host]       create_instance('greeter'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('greeter'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    [componente] get_api_version() devuelve 1
+    [host]       create_instance('greeter'): versión de ABI compatible (Host = 1, módulo = 1)
+    [componente] create_component(): hago new GreeterComponent dentro del componente
+    [componente] GreeterComponent construido (el objeto vive en el heap del componente)
+  [OK]    con 2 componentes vivos: 3 referencias
+    [host]       deleter: el shared_ptr llegó a cero; llamo a destroy_func del componente (copias de la biblioteca vivas: 3)
+    [componente] destroy_component(): hago delete dentro del componente (el que reserva, libera)
+    [componente] GreeterComponent destruido
+  [OK]    se destruye el 1.º componente: vuelve a 2 referencias
+    [host]       deleter: el shared_ptr llegó a cero; llamo a destroy_func del componente (copias de la biblioteca vivas: 2)
+    [componente] destroy_component(): hago delete dentro del componente (el que reserva, libera)
+    [componente] GreeterComponent destruido
+  [OK]    se destruye el 2.º componente: queda 1 referencia (el mapa)
+  [OK]    la biblioteca sigue cargada porque el mapa la conserva
+    [host]       SharedLibrary: se cierra './lib/greeter.dll' (dlclose / FreeLibrary)
+  [OK]    al destruirse el ModuleManager, sin componentes vivos, la biblioteca se descarga
+  -- Caso B: el ModuleManager muere ANTES que los componentes --
+    [host]       SharedLibrary: se abrió './lib/greeter.dll' (dlopen / LoadLibrary)
+    [host]       load_module: 'greeter' guardada en el mapa (mapa protegido por map_mutex_)
+    [host]       create_instance('greeter'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('greeter'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    [componente] get_api_version() devuelve 1
+    [host]       create_instance('greeter'): versión de ABI compatible (Host = 1, módulo = 1)
+    [componente] create_component(): hago new GreeterComponent dentro del componente
+    [componente] GreeterComponent construido (el objeto vive en el heap del componente)
+    [host]       create_instance('greeter'): biblioteca tomada del mapa; el mutex ya se soltó
+    [host]       create_instance('greeter'): encontré los 3 símbolos C (get_api_version, create_component, destroy_component)
+    [componente] get_api_version() devuelve 1
+    [host]       create_instance('greeter'): versión de ABI compatible (Host = 1, módulo = 1)
+    [componente] create_component(): hago new GreeterComponent dentro del componente
+    [componente] GreeterComponent construido (el objeto vive en el heap del componente)
+  [OK]    el ModuleManager ya no existe, pero la biblioteca sigue cargada (la retienen los deleters)
+  [OK]    y el código del componente sigue siendo ejecutable: greet -> "Hello, Rocio!"
+    [host]       deleter: el shared_ptr llegó a cero; llamo a destroy_func del componente (copias de la biblioteca vivas: 2)
+    [componente] destroy_component(): hago delete dentro del componente (el que reserva, libera)
+    [componente] GreeterComponent destruido
+  [OK]    se destruye el 1.º componente: sigue cargada (queda el 2.º)
+    [host]       deleter: el shared_ptr llegó a cero; llamo a destroy_func del componente (copias de la biblioteca vivas: 1)
+    [componente] destroy_component(): hago delete dentro del componente (el que reserva, libera)
+    [componente] GreeterComponent destruido
+    [host]       SharedLibrary: se cierra './lib/greeter.dll' (dlclose / FreeLibrary)
+  [OK]    se destruye el último componente: recién ahí se descarga la biblioteca
+
+=== PUNTO 4: Seguridad de hilos y concurrencia primitiva ===
+  8 hilos x 25 iteraciones: cada una hace load_module + create_instance + greet sobre el MISMO ModuleManager
+  (trazas apagadas durante esta prueba para no mezclar la salida de los hilos)
+  [OK]    200 de 200 operaciones concurrentes terminaron bien
+  [OK]    al terminar los hilos, la biblioteca tiene 1 referencia (solo el mapa): ningún componente quedó sin destruir
+    [host]       SharedLibrary: se cierra './lib/greeter.dll' (dlclose / FreeLibrary)
+
+=== RESUMEN ===
+  Verificaciones: 23, fallidas: 0

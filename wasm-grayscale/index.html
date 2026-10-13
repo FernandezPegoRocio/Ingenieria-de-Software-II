@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WASM Grayscale – Ingeniería del Software II</title>
+  <style>
+    :root { --bg:#14161a; --card:#1d2026; --fg:#e8eaed; --muted:#9aa0a6; --accent:#6ea8fe; --ok:#7bd88f; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 1.4rem; margin: 0 0 4px; }
+    p.sub { color: var(--muted); margin: 0 0 20px; font-size: .95rem; }
+    .controls { display:flex; flex-wrap:wrap; gap:12px; background:var(--card); padding:14px; border-radius:10px; margin-bottom:16px; align-items:end; }
+    label { display:flex; flex-direction:column; gap:4px; font-size:.8rem; color:var(--muted); }
+    select, button, input[type=file] { background:#2a2e36; color:var(--fg); border:1px solid #3a3f49; border-radius:6px; padding:8px 10px; font-size:.9rem; }
+    button { cursor:pointer; }
+    button:hover { border-color: var(--accent); }
+    .canvases { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    @media (max-width: 720px) { .canvases { grid-template-columns: 1fr; } }
+    figure { margin:0; background:var(--card); border-radius:10px; padding:10px; }
+    figcaption { font-size:.85rem; color:var(--muted); margin-bottom:6px; }
+    canvas { width:100%; height:auto; display:block; border-radius:6px; background:#000; }
+    .stats { margin-top:16px; background:var(--card); border-radius:10px; padding:14px; font-family: ui-monospace, monospace; font-size:.85rem; line-height:1.6; }
+    .stats b { color: var(--ok); }
+    video { display:none; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Filtro de escala de grises con WebAssembly (C puro)</h1>
+  <p class="sub">Implementación de ANALISIS_WASM-02: motor + filtro inyectado (SOLID) compilado a WASM, consumido desde HTML/JS sin glue code.</p>
+
+  <section class="controls">
+    <label>Fuente
+      <select id="source">
+        <option value="sample">Imagen de ejemplo</option>
+        <option value="file">Subir imagen…</option>
+        <option value="webcam">Cámara web (tiempo real)</option>
+      </select>
+    </label>
+    <label id="fileLabel" hidden>Archivo
+      <input type="file" id="file" accept="image/*">
+    </label>
+    <label>Filtro
+      <select id="filter">
+        <option value="grayscale">Escala de grises</option>
+        <option value="invert">Invertir colores</option>
+      </select>
+    </label>
+    <label>Motor
+      <select id="engine">
+        <option value="wasm">WebAssembly (C)</option>
+        <option value="js">JavaScript</option>
+      </select>
+    </label>
+    <button id="bench" type="button">Comparar WASM vs JS</button>
+  </section>
+
+  <section class="canvases">
+    <figure><figcaption>Original</figcaption><canvas id="src"></canvas></figure>
+    <figure><figcaption>Resultado</figcaption><canvas id="dst"></canvas></figure>
+  </section>
+
+  <section class="stats" id="stats">Cargando módulo WASM…</section>
+  <video id="video" playsinline muted></video>
+</main>
+<script src="script.js"></script>
+</body>
+</html>

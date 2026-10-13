@@ -1,0 +1,16 @@
+{
+  "name": "agregacion-personaje",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Practica de agregacion: un Personaje que cambia de arma y de habilidad, todo grafico (TypeScript + Node + HTML5 Canvas)",
+  "scripts": {
+    "build": "tsc -p tsconfig.cliente.json && tsc -p tsconfig.servidor.json",
+    "start": "node dist/servidor/server.js",
+    "test": "node dist/pruebas/pruebas.js",
+    "dev": "npm run build && npm start"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}
